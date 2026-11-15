@@ -14,6 +14,7 @@ def create_app(config_class=Config):
     from app.routes.properties import properties_bp
     from app.routes.applications import applications_bp
     from app.routes.tenancies import tenancies_bp
+    from app.routes.payments import payments_bp
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -29,6 +30,7 @@ def create_app(config_class=Config):
     app.register_blueprint(properties_bp)
     app.register_blueprint(applications_bp)
     app.register_blueprint(tenancies_bp)
+    app.register_blueprint(payments_bp)
 
     @app.get("/api/health")
     def health_check():
