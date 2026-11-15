@@ -11,6 +11,7 @@ def create_app(config_class=Config):
 
     from app import models
     from app.routes.auth import auth_bp
+    from app.routes.properties import properties_bp
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -23,6 +24,7 @@ def create_app(config_class=Config):
     )
 
     app.register_blueprint(auth_bp)
+    app.register_blueprint(properties_bp)
 
     @app.get("/api/health")
     def health_check():
