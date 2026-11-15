@@ -147,3 +147,18 @@ def get_current_user():
         "success": True,
         "user": user_response(user)
     }), 200
+
+
+from flask_jwt_extended import jwt_required
+from app.utils.permissions import role_required
+
+
+@auth_bp.get("/admin-check")
+@jwt_required()
+@role_required("Administrator")
+def admin_check():
+    return jsonify({
+        "success": True,
+        "message": "Administrator access granted.",
+        "user": user_response(request.current_user)
+    }), 200
