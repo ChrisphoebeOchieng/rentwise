@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required
 
 from app.extensions import db
 from app.models import RentalApplication, Property
+from app.services.notifications import create_notification
 from app.utils.permissions import role_required
 
 
@@ -196,6 +197,14 @@ def review_application(application_id):
 
     application.application_status = status
     application.review_comments = comments
+    create_notification(
+        user_id=application.applicant_id,
+        message=(
+            f'Your rental application for '
+            f'{application.property.property_name} has been {status}.'
+        ),
+        notification_type='application'
+    )
 
     try:
         db.session.commit()

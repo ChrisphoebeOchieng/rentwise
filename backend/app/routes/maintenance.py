@@ -6,6 +6,7 @@ from flask_jwt_extended import jwt_required
 from app.extensions import db
 from app.models import MaintenanceRequest, Property, Tenant, Tenancy
 from app.utils.permissions import role_required
+from app.services.notifications import create_notification
 
 
 maintenance_bp = Blueprint("maintenance", __name__, url_prefix="/api/maintenance")
@@ -74,6 +75,14 @@ def create_maintenance_request():
             "message": "Tenant profile not found."
         }), 404
 
+    property_record = db.session.get(Property, property_id)
+
+    if not property_record:
+        return jsonify({
+            "success": False,
+            "message": "Property not found."
+        }), 404
+
     active_tenancy = Tenancy.query.filter_by(
         tenant_id=tenant.tenant_id,
         property_id=property_id,
@@ -95,14 +104,23 @@ def create_maintenance_request():
         }), 400
 
     maintenance = MaintenanceRequest(
-        property_id=property_id,
-        tenant_id=tenant.tenant_id,
+        property=property_record,
+        tenant=tenant,
         description=description.strip(),
         priority=priority,
         request_status="pending"
     )
 
     db.session.add(maintenance)
+    create_notification(
+        user_id=property_record.owner_id,
+        message=(
+            f'New maintenance request submitted for '
+            f'{property_record.property_name} by '
+            f'{maintenance.tenant.user.full_name}.'
+        ),
+        notification_type='maintenance'
+    )
     db.session.commit()
 
     return jsonify({
@@ -244,6 +262,15 @@ def update_maintenance_request(request_id):
             "message": "Resolution details are required when resolving a request."
         }), 400
 
+    create_notification(
+        user_id=maintenance.tenant.user_id,
+        message=(
+            f'Your maintenance request for '
+            f'{maintenance.property.property_name} has been updated. '
+            f'Current status: {maintenance.request_status}.'
+        ),
+        notification_type='maintenance'
+    )
     db.session.commit()
 
     return jsonify({
