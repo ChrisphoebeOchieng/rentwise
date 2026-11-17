@@ -6,6 +6,7 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminLayout from './layouts/AdminLayout'
 import Properties from './pages/properties/Properties'
 import AdminSections from './pages/admin/AdminSections'
+import AdminReports from './pages/admin/AdminReports'
 
 function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth()
@@ -76,6 +77,7 @@ function AppRoutes() {
       >
         <Route index element={<AdminDashboard />} />
         <Route path="properties" element={<Properties />} />
+        <Route path="reports" element={<AdminReports />} />
         <Route path=":section" element={<AdminSections />} />
       </Route>
 
