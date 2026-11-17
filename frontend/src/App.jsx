@@ -1,121 +1,121 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
 import './App.css'
+import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import Login from './pages/auth/Login'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminLayout from './layouts/AdminLayout'
+import Properties from './pages/properties/Properties'
+import AdminSections from './pages/admin/AdminSections'
 
-function App() {
-  const [count, setCount] = useState(0)
+function ProtectedRoute({ children, roles }) {
+  const { user, loading } = useAuth()
+
+  if (loading) return <div className="app-loading">Loading RentWise...</div>
+  if (!user) return <Navigate to="/login" replace />
+
+  if (roles && !roles.includes(user.role)) {
+    return <Navigate to="/unauthorized" replace />
+  }
+
+  return children
+}
+
+function Dashboard({ role }) {
+  const { user, logout } = useAuth()
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
+    <main className="dashboard-main">
+      <header className="section-heading">
         <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
+          <p className="eyebrow">RENTWISE WORKSPACE</p>
+          <h1>Welcome, {user.full_name}</h1>
+          <p>{role} dashboard</p>
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
+        <button className="gold-button" onClick={logout}>Sign out</button>
+      </header>
+      <section className="content-panel">
+        <h2>{role} workspace</h2>
+        <p>Your account is authenticated. We're connecting your dashboard modules next.</p>
       </section>
+    </main>
+  )
+}
 
-      <div className="ticks"></div>
+function AdminPlaceholder() {
+  const { section } = useParams()
+  const titles = {
+    applications: 'Applications',
+    tenancies: 'Tenancies',
+    payments: 'Payments',
+    maintenance: 'Maintenance',
+    notifications: 'Notifications',
+    reports: 'Reports',
+  }
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+  return (
+    <section className="content-panel">
+      <p className="eyebrow">RENTWISE MANAGEMENT</p>
+      <h1>{titles[section] || 'Admin workspace'}</h1>
+      <p>This section is ready for its management interface.</p>
+    </section>
+  )
+}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute roles={['Administrator']}>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<AdminDashboard />} />
+        <Route path="properties" element={<Properties />} />
+        <Route path=":section" element={<AdminSections />} />
+      </Route>
+
+      <Route path="/landlord" element={
+        <ProtectedRoute roles={['Landlord']}>
+          <Dashboard role="Landlord" />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/manager" element={
+        <ProtectedRoute roles={['Property Manager']}>
+          <Dashboard role="Property Manager" />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/tenant" element={
+        <ProtectedRoute roles={['Tenant']}>
+          <Dashboard role="Tenant" />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/unauthorized" element={
+        <main className="dashboard-main">
+          <h1>Access denied</h1>
+          <p>You do not have permission to view this page.</p>
+        </main>
+      } />
+
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
+  )
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
   )
 }
 
